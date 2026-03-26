@@ -1,0 +1,84 @@
+name: 毎日記事自動生成
+
+on:
+  schedule:
+    # 毎日 6:00 JST に実行（UTC 21:00 前日）
+    - cron: '0 21 * * *'
+  # 手動トリガー用
+  workflow_dispatch:
+
+jobs:
+  generate-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+
+      - name: Python 3.11 をセットアップ
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 依存関係をインストール
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 記事を生成して投稿
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AMAZON_ASSOCIATE_ID: ${{ secrets.AMAZON_ASSOCIATE_ID }}
+          NOTE_EMAIL: ${{ secrets.NOTE_EMAIL }}
+          NOTE_PASSWORD: ${{ secrets.NOTE_PASSWORD }}
+          DB_PATH: ./data/affiliate_blog.db
+        run: |
+          python scripts/github-actions-generate.py
+
+      - name: 生成結果をアップロード
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generation-log
+          path: ./data/affiliate_blog.db
+          retention-days: 30
+
+      - name: 成功通知をSlackに送信
+        if: success()
+        uses: slackapi/slack-github-action@v1
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+          payload: |
+            {
+              "text": "✅ 本日の記事生成に成功しました",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "✅ *本日の記事生成に成功しました*"
+                  }
+                }
+              ]
+            }
+
+      - name: エラー通知をSlackに送信
+        if: failure()
+        uses: slackapi/slack-github-action@v1
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+          payload: |
+            {
+              "text": "❌ 記事生成に失敗しました",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "❌ *記事生成に失敗しました*\n詳細: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                  }
+                }
+              ]
+            }
