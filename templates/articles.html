@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Articles - Amazon Affiliate Auto-Publisher{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h1 class="mb-4">📝 記事一覧</h1>
+
+        <div class="btn-group mb-3" role="group">
+            <a href="/articles" class="btn btn-outline-primary {% if not status_filter %}active{% endif %}">
+                すべて
+            </a>
+            <a href="/articles?status=draft" class="btn btn-outline-primary {% if status_filter == 'draft' %}active{% endif %}">
+                下書き
+            </a>
+            <a href="/articles?status=queued" class="btn btn-outline-primary {% if status_filter == 'queued' %}active{% endif %}">
+                キュー中
+            </a>
+            <a href="/articles?status=published" class="btn btn-outline-primary {% if status_filter == 'published' %}active{% endif %}">
+                公開済み
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>タイトル</th>
+                        <th>タイプ</th>
+                        <th>ステータス</th>
+                        <th>文字数</th>
+                        <th>生成日時</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for article in articles %}
+                    <tr>
+                        <td>{{ article.id }}</td>
+                        <td>
+                            <a href="/articles/{{ article.id }}">
+                                {{ article.title[:60] }}{% if article.title|length > 60 %}...{% endif %}
+                            </a>
+                        </td>
+                        <td>
+                            {% if article.type == 'review' %}
+                                <span class="badge bg-info">レビュー</span>
+                            {% elif article.type == 'comparison' %}
+                                <span class="badge bg-secondary">比較</span>
+                            {% else %}
+                                <span class="badge bg-warning">ランキング</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if article.status == 'published' %}
+                                <span class="badge bg-success">公開</span>
+                            {% elif article.status == 'queued' %}
+                                <span class="badge bg-warning">キュー</span>
+                            {% elif article.status == 'draft' %}
+                                <span class="badge bg-secondary">下書き</span>
+                            {% else %}
+                                <span class="badge bg-danger">失敗</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ article.word_count }}</td>
+                        <td class="small">{{ article.generated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="/articles/{{ article.id }}" class="btn btn-primary">
+                                    📖 詳細
+                                </a>
+                                {% if article.status in ['draft', 'queued'] %}
+                                <button class="btn btn-success" onclick="publishArticle({{ article.id }})">
+                                    📤 投稿
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            記事が見つかりません
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="status-message"></div>
+
+<script>
+    function publishArticle(articleId) {
+        if (!confirm('この記事を下書きとしてnote.comに投稿しますか？')) return;
+
+        showStatus('📤 投稿を開始しました...', 'info');
+
+        axios.post(`/api/publish/${articleId}`, { draft: true })
+            .then(response => {
+                showStatus('✓ 投稿を開始しました', 'success');
+                setTimeout(() => location.reload(), 2000);
+            })
+            .catch(error => {
+                showStatus('✗ エラー: ' + error.response?.data?.error || error.message, 'danger');
+            });
+    }
+
+    function showStatus(message, type) {
+        const html = `
+            <div class="alert alert-${type} alert-dismissible fade show mt-3" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        document.getElementById('status-message').innerHTML = html;
+    }
+</script>
+{% endblock %}

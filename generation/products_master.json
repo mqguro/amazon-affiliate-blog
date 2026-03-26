@@ -1,0 +1,104 @@
+{
+  "USBハブ / ドック": {
+    "cost": {
+      "name": "Anker USB 3.0 4ポートハブ",
+      "asin": "B01D4DKEA2",
+      "url": "B01D4DKEA2"
+    },
+    "std": {
+      "name": "UGREEN Revodok Pro 9-in-1 USB-Cハブ",
+      "asin": "B0D3RNZX8Z",
+      "url": "B0D3RNZX8Z"
+    },
+    "prem": {
+      "name": "Anker 778 Thunderbolt ドッキングステーション（12-in-1）",
+      "asin": "B0C2L6CYGX",
+      "url": "B0C2L6CYGX"
+    }
+  },
+  "ヘッドホン / ヘッドセット": {
+    "cost": {
+      "name": "HyperX Cloud Stinger 2 Core",
+      "asin": "B0971V4GGS",
+      "url": "B0971V4GGS"
+    },
+    "std": {
+      "name": "SteelSeries Arctis Nova 7",
+      "asin": "B0BR1PZMX8",
+      "url": "B0BR1PZMX8"
+    },
+    "prem": {
+      "name": "Logicool G PRO X 2 LIGHTSPEED",
+      "asin": "B0B77KNNMF",
+      "url": "B0B77KNNMF"
+    }
+  },
+  "マイクアーム": {
+    "cost": {
+      "name": "NEEWER マイクアーム",
+      "asin": "B07YZXNX57",
+      "url": "B07YZXNX57"
+    },
+    "std": {
+      "name": "audio-technica AT8700J",
+      "asin": "B00DWZBDXU",
+      "url": "B00DWZBDXU"
+    },
+    "prem": {
+      "name": "RODE PSA1+",
+      "asin": "B08D3Z9MSY",
+      "url": "B08D3Z9MSY"
+    }
+  },
+  "ゲーミングチェア": {
+    "cost": {
+      "name": "GTRACING ゲーミングチェア",
+      "asin": "B0B8WXMDRF",
+      "url": "B0B8WXMDRF"
+    },
+    "std": {
+      "name": "AKRacing Pro-X V2",
+      "asin": "B08N2LYV7B",
+      "url": "B08N2LYV7B"
+    },
+    "prem": {
+      "name": "Secretlab TITAN Evo Black³",
+      "asin": "B0C8KTXTXP",
+      "url": "B0C8KTXTXP"
+    }
+  },
+  "配信用ライト": {
+    "cost": {
+      "name": "NEEWER BASICS BP66 2パック 撮影用ライト",
+      "asin": "B08GJC1LJD",
+      "url": "B08GJC1LJD"
+    },
+    "std": {
+      "name": "Elgato Key Light Neo",
+      "asin": "B08ZCGRMVL",
+      "url": "B08ZCGRMVL"
+    },
+    "prem": {
+      "name": "Aputure Amaran COB 60X",
+      "asin": "B0CYHQSJCZ",
+      "url": "B0CYHQSJCZ"
+    }
+  },
+  "モニターライト": {
+    "cost": {
+      "name": "Quntis モニターライト スクリーンランプ 41cm",
+      "asin": "B0CKDJPXTX",
+      "url": "B0CKDJPXTX"
+    },
+    "std": {
+      "name": "BenQ ScreenBar",
+      "asin": "B081RNZMVP",
+      "url": "B081RNZMVP"
+    },
+    "prem": {
+      "name": "BenQ ScreenBar Halo 2",
+      "asin": "B0DKN2JKFH",
+      "url": "B0DKN2JKFH"
+    }
+  }
+}

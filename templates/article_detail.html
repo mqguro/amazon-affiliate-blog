@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}{{ article.title }} - Amazon Affiliate Auto-Publisher{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <a href="/articles" class="btn btn-outline-secondary btn-sm mb-3">← 記事一覧に戻る</a>
+        <h1 class="mb-3">{{ article.title }}</h1>
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <strong>記事情報</strong>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>タイプ:</strong>
+                            {% if article.type == 'review' %}レビュー{% elif article.type == 'comparison' %}比較記事{% else %}ランキング{% endif %}
+                        </p>
+                        <p><strong>ステータス:</strong>
+                            <span class="badge bg-{{ 'success' if article.status == 'published' else 'warning' if article.status == 'queued' else 'secondary' }}">
+                                {{ article.status }}
+                            </span>
+                        </p>
+                        <p><strong>文字数:</strong> {{ article.word_count }}</p>
+                        <p><strong>生成日時:</strong> {{ article.generated_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                        {% if article.published_url %}
+                        <p><strong>公開URL:</strong> <a href="{{ article.published_url }}" target="_blank">note.com で表示</a></p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <strong>対象商品</strong>
+                    </div>
+                    <div class="card-body">
+                        {% if article.product_asins %}
+                        <ul class="mb-0">
+                            {% for asin in article.product_asins %}
+                            <li><code>{{ asin }}</code></li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="text-muted mb-0">商品情報なし</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if article.status in ['draft', 'queued'] %}
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <button class="btn btn-success btn-lg" onclick="publishArticle()">
+                    📤 note.com に下書き投稿
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Article Content -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">📄 記事内容</h5>
+            </div>
+            <div class="card-body article-content" style="line-height: 1.8; font-size: 14px;">
+                {{ article.content | safe }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="status-message"></div>
+
+<style>
+    .article-content h1 { font-size: 2rem; margin-top: 1rem; margin-bottom: 0.5rem; }
+    .article-content h2 { font-size: 1.5rem; margin-top: 1.5rem; margin-bottom: 0.5rem; border-bottom: 1px solid #ddd; padding-bottom: 0.5rem; }
+    .article-content h3 { font-size: 1.2rem; margin-top: 1rem; margin-bottom: 0.5rem; }
+    .article-content p { margin-bottom: 1rem; }
+    .article-content ul, .article-content ol { margin-bottom: 1rem; margin-left: 1.5rem; }
+    .article-content a { color: #007bff; text-decoration: underline; }
+    .article-content code { background-color: #f5f5f5; padding: 2px 6px; border-radius: 3px; }
+    .article-content table { border-collapse: collapse; width: 100%; margin-bottom: 1rem; }
+    .article-content table, .article-content th, .article-content td { border: 1px solid #ddd; }
+    .article-content th { background-color: #f5f5f5; padding: 0.75rem; }
+    .article-content td { padding: 0.75rem; }
+</style>
+
+<script>
+    function publishArticle() {
+        if (!confirm('この記事を下書きとしてnote.comに投稿しますか？\n\n投稿後はnote.comの下書き画面で確認・編集できます。')) {
+            return;
+        }
+
+        showStatus('📤 投稿を開始しました...', 'info');
+
+        const articleId = window.location.pathname.split('/').pop();
+        axios.post(`/api/publish/${articleId}`, { draft: true })
+            .then(response => {
+                showStatus('✓ 投稿を開始しました（完了までお待ちください）', 'success');
+                setTimeout(() => location.reload(), 3000);
+            })
+            .catch(error => {
+                showStatus('✗ エラー: ' + error.response?.data?.error || error.message, 'danger');
+            });
+    }
+
+    function showStatus(message, type) {
+        const html = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        document.getElementById('status-message').innerHTML = html;
+    }
+
+    // Markdown をHTMLに変換（簡易版）
+    function renderMarkdown(markdown) {
+        let html = markdown;
+
+        // Headers
+        html = html.replace(/^### (.*?)$/gim, '<h3>$1</h3>');
+        html = html.replace(/^## (.*?)$/gim, '<h2>$1</h2>');
+        html = html.replace(/^# (.*?)$/gim, '<h1>$1</h1>');
+
+        // Bold
+        html = html.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>');
+
+        // Links
+        html = html.replace(/\[(.*?)\]\((.*?)\)/gim, '<a href="$2" target="_blank">$1</a>');
+
+        // Line breaks
+        html = html.replace(/\n\n/gim, '</p><p>');
+        html = '<p>' + html + '</p>';
+
+        return html;
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,1169 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Amazon Affiliate Auto-Publisher{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h1 class="mb-4">📊 ダッシュボード</h1>
+    </div>
+</div>
+
+<!-- Status Messages -->
+<div id="statusAlerts" class="row mb-4"></div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4" id="stats-container">
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-white bg-primary" style="cursor: pointer;" onclick="showProducts()">
+            <div class="card-body">
+                <h5 class="card-title">商品数</h5>
+                <p class="card-text display-6" id="stat-products">{{ stats.products }}</p>
+                <small class="text-light">クリックで一覧表示</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-white bg-info" style="cursor: pointer;" onclick="showArticles('all')">
+            <div class="card-body">
+                <h5 class="card-title">記事数</h5>
+                <p class="card-text display-6" id="stat-articles">{{ stats.articles }}</p>
+                <small class="text-light">クリックで一覧表示</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-white bg-success" style="cursor: pointer;" onclick="showArticles('published')">
+            <div class="card-body">
+                <h5 class="card-title">公開済み</h5>
+                <p class="card-text display-6" id="stat-published">{{ stats.published }}</p>
+                <small class="text-light">クリックで一覧表示</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-white bg-warning" style="cursor: pointer;" onclick="showArticles('queued')">
+            <div class="card-body">
+                <h5 class="card-title">キュー中</h5>
+                <p class="card-text display-6" id="stat-queued">{{ stats.queued }}</p>
+                <small class="text-light">クリックで一覧表示</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Product Search -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">🔎 商品を検索して記事生成</h5>
+            </div>
+            <div class="card-body">
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control form-control-lg"
+                           id="productSearch"
+                           placeholder="商品名やカテゴリで検索（例：ゲーミングチェア、ヘッドセット、USB）"
+                           onkeyup="searchProducts()">
+                    <button class="btn btn-primary" type="button" onclick="searchProducts()">
+                        🔍 検索
+                    </button>
+                </div>
+                <div id="searchResults"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">⚡ クイックアクション</h5>
+            </div>
+            <div class="card-body">
+                <div class="row gap-2 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">📁 カテゴリを選択:</label>
+                        <select class="form-select" id="categorySelect" onchange="updateItems()">
+                            <option value="一人暮らし" selected>🏠 一人暮らし</option>
+                            <option value="ガジェット">⚙️ ガジェット</option>
+                            <option value="家電">🔌 家電</option>
+                            <option value="キッチン">🍳 キッチン</option>
+                            <option value="美容・健康">💄 美容・健康</option>
+                            <option value="ペット用品">🐾 ペット用品</option>
+                            <option value="スポーツ・アウトドア">⛺ スポーツ・アウトドア</option>
+                            <option value="ファッション">👗 ファッション</option>
+                            <option value="オフィス用品">🖊️ オフィス用品</option>
+                            <option value="スマートホーム">🏡 スマートホーム</option>
+                            <option value="ゲーム・おもちゃ">🎮 ゲーム・おもちゃ</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">🔍 商品種類を選択:</label>
+                        <select class="form-select" id="itemSelect">
+                            <option value="">-- 品目を選択 --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row gap-2">
+                    <div class="col-md-2 col-sm-6">
+                        <button class="btn btn-primary w-100" onclick="discoverProducts()">
+                            🔍 商品を発見
+                        </button>
+                    </div>
+                    <div class="col-md-2 col-sm-6">
+                        <button class="btn btn-info w-100" onclick="generateArticle('review')">
+                            ⚖️ 3つ比較
+                        </button>
+                    </div>
+                    <div class="col-md-2 col-sm-6">
+                        <button class="btn btn-success w-100" onclick="generateSingleReview()">
+                            📄 単品レビュー
+                        </button>
+                    </div>
+                    <div class="col-md-2 col-sm-6">
+                        <button class="btn btn-secondary w-100" onclick="generateArticle('comparison')">
+                            📊 比較記事
+                        </button>
+                    </div>
+                    <div class="col-md-2 col-sm-6">
+                        <button class="btn btn-warning w-100" onclick="generateArticle('ranking')">
+                            🏆 ランキング
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Articles -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">📝 最新の記事</h5>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>タイトル</th>
+                            <th>ステータス</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for article in articles %}
+                        <tr>
+                            <td><a href="/articles/{{ article.id }}">{{ article.title[:30] }}...</a></td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if article.status == 'published' else 'warning' if article.status == 'queued' else 'secondary' }}">
+                                    {{ article.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="publishArticle({{ article.id }})">
+                                    投稿
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer">
+                <a href="/articles" class="btn btn-sm btn-outline-primary w-100">すべて見る</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Runs -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">⏱️ 最近のジョブ実行</h5>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ジョブ</th>
+                            <th>時刻</th>
+                            <th>結果</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for run in runs %}
+                        <tr>
+                            <td>{{ run.job_type }}</td>
+                            <td class="small">{{ run.run_at }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if run.status == 'success' else 'danger' }}">
+                                    {{ run.articles_succeeded }}/{{ run.articles_processed }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Message -->
+<div id="status-message"></div>
+
+<script>
+    // カテゴリデータ（グローバル）
+    let categoriesData = {};
+
+    // カテゴリデータを読み込む
+    axios.get('/api/categories')
+        .then(response => {
+            categoriesData = response.data;
+            updateItems(); // 初期ロード時にアイテムを設定
+        })
+        .catch(error => console.error('Error loading categories:', error));
+
+    // カテゴリが変更されたときにアイテムドロップダウンを更新
+    function updateItems() {
+        const categorySelect = document.getElementById('categorySelect');
+        const itemSelect = document.getElementById('itemSelect');
+        const selectedCategory = categorySelect.value;
+
+        // アイテムドロップダウンをクリア
+        itemSelect.innerHTML = '<option value="">-- 品目を選択 --</option>';
+
+        if (selectedCategory && categoriesData[selectedCategory]) {
+            const items = categoriesData[selectedCategory].items;
+            items.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item;
+                option.textContent = item;
+                itemSelect.appendChild(option);
+            });
+        }
+    }
+
+    // リアルタイム統計更新（5秒ごと）
+    function updateStats() {
+        axios.get('/api/stats')
+            .then(response => {
+                const data = response.data;
+                document.getElementById('stat-products').textContent = data.products;
+                document.getElementById('stat-articles').textContent = data.articles;
+                document.getElementById('stat-published').textContent = data.published;
+                document.getElementById('stat-queued').textContent = data.queued;
+            })
+            .catch(error => console.error('Error updating stats:', error));
+    }
+
+    setInterval(updateStats, 5000);
+
+    // 生成ステータスをポーリング（2秒ごと）
+    function checkGenerationStatus() {
+        axios.get('/api/generation-status')
+            .then(response => {
+                const data = response.data;
+                const alertsDiv = document.getElementById('statusAlerts');
+
+                // 前のアラートをクリア
+                alertsDiv.innerHTML = '';
+
+                // エラーメッセージを表示
+                if (data.status === 'error' && data.error_message) {
+                    alertsDiv.innerHTML = `
+                        <div class="col-md-12">
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <strong>⚠️ エラーが発生しました</strong>
+                                <br>${data.error_message}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        </div>
+                    `;
+                } else if (data.status === 'in_progress') {
+                    alertsDiv.innerHTML = `
+                        <div class="col-md-12">
+                            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                                <strong>🔄 記事生成中...</strong>
+                                <div class="progress mt-2" style="height: 25px;">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%;">
+                                        処理中...
+                                    </div>
+                                </div>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        </div>
+                    `;
+                } else if (data.status === 'success' && data.articles_succeeded > 0) {
+                    alertsDiv.innerHTML = `
+                        <div class="col-md-12">
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <strong>✓ 記事生成完了</strong>
+                                <br>${data.articles_succeeded}件の記事を生成しました
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => console.error('Error checking generation status:', error));
+    }
+
+    // 初回チェック＋ 2秒ごとにポーリング
+    checkGenerationStatus();
+    setInterval(checkGenerationStatus, 2000);
+
+    // 商品を発見
+    function discoverProducts() {
+        const categorySelect = document.getElementById('categorySelect');
+        const itemSelect = document.getElementById('itemSelect');
+        const category = categorySelect.value;
+        const item = itemSelect.value || ''; // アイテムが選択されていない場合は空文字列
+
+        const searchTerm = item || category;
+        showStatus(`🔍 「${searchTerm}」から商品検索を開始しました...`, 'info');
+
+        const beforeCount = parseInt(document.getElementById('stat-products').textContent);
+
+        axios.post('/api/discover', { category: category, keyword: item })
+            .then(response => {
+                // 1秒ごとに統計を確認して、商品数が増えるまで待つ
+                let checkCount = 0;
+                const checkInterval = setInterval(() => {
+                    axios.get('/api/stats')
+                        .then(res => {
+                            if (res.data.products > beforeCount) {
+                                clearInterval(checkInterval);
+                                const added = res.data.products - beforeCount;
+                                showStatus(`✓ ${added}個の商品を追加しました！`, 'success');
+                                updateStats();
+                            }
+                            checkCount++;
+                            if (checkCount > 30) { // 30秒タイムアウト
+                                clearInterval(checkInterval);
+                                showStatus('✓ 商品検索を開始しました', 'success');
+                                setTimeout(updateStats, 1000);
+                            }
+                        });
+                }, 1000);
+            })
+            .catch(error => {
+                showStatus('✗ エラー: ' + error.response?.data?.error || error.message, 'danger');
+            });
+    }
+
+    // 記事を生成
+    function generateArticle(type) {
+        const typeLabel = type === 'review' ? 'レビュー' : type === 'comparison' ? '比較' : 'ランキング';
+
+        // プログレスバーを表示
+        showStatus(`<div class="progress" style="height: 25px;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                 id="progress-bar" role="progressbar" style="width: 10%"></div>
+        </div>
+        <p class="mt-2 mb-0">✍️ ${typeLabel}記事を生成中...（1-3分かかります）</p>`, 'info');
+
+        const beforeCount = parseInt(document.getElementById('stat-articles').textContent);
+
+        axios.post('/api/generate', { type: type })
+            .then(response => {
+                // 進捗を表示しながら完成を待つ
+                let progress = 10;
+                const progressInterval = setInterval(() => {
+                    progress += Math.random() * 15;
+                    if (progress > 90) progress = 90;
+                    document.getElementById('progress-bar').style.width = progress + '%';
+                }, 800);
+
+                // 記事が追加されるまで確認（より長く待つ）
+                let checkCount = 0;
+                const checkInterval = setInterval(() => {
+                    axios.get('/api/stats')
+                        .then(res => {
+                            if (res.data.articles > beforeCount) {
+                                clearInterval(checkInterval);
+                                clearInterval(progressInterval);
+                                document.getElementById('progress-bar').style.width = '100%';
+                                showStatus(`✓ ${typeLabel}記事を生成しました！`, 'success');
+                                updateStats();
+                            }
+                            checkCount++;
+                            // 5分（300秒）タイムアウト
+                            if (checkCount > 300) {
+                                clearInterval(checkInterval);
+                                clearInterval(progressInterval);
+                                document.getElementById('progress-bar').style.width = '100%';
+                                showStatus(`✓ 記事生成が完了しました！`, 'success');
+                                setTimeout(updateStats, 2000);
+                            }
+                        })
+                        .catch(error => {
+                            // ポーリングエラーは無視（ネットワーク一時的な問題など）
+                        });
+                }, 500); // より頻繁に確認
+            })
+            .catch(error => {
+                showStatus('✗ エラー: ' + error.response?.data?.error || error.message, 'danger');
+            });
+    }
+
+    // 単品レビュー記事を生成（データベースの商品を自動選択）
+    function generateSingleReview() {
+        showStatus(`<div class="progress" style="height: 25px;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                 id="progress-bar" role="progressbar" style="width: 10%"></div>
+        </div>
+        <p class="mt-2 mb-0">📄 単品レビュー記事を生成中...（1-2分）</p>`, 'info');
+
+        const beforeCount = parseInt(document.getElementById('stat-articles').textContent);
+
+        axios.post('/api/generate', { type: 'single_review' })
+            .then(response => {
+                // 進捗を表示しながら完成を待つ
+                let progress = 10;
+                const progressInterval = setInterval(() => {
+                    progress += Math.random() * 15;
+                    if (progress > 90) progress = 90;
+                    document.getElementById('progress-bar').style.width = progress + '%';
+                }, 800);
+
+                // 記事が追加されるまで確認
+                let checkCount = 0;
+                const checkInterval = setInterval(() => {
+                    axios.get('/api/stats')
+                        .then(res => {
+                            if (res.data.articles > beforeCount) {
+                                clearInterval(checkInterval);
+                                clearInterval(progressInterval);
+                                document.getElementById('progress-bar').style.width = '100%';
+                                showStatus(`✓ 単品レビュー記事を生成しました！`, 'success');
+                                updateStats();
+                            }
+                            checkCount++;
+                            // 5分（300秒）タイムアウト
+                            if (checkCount > 300) {
+                                clearInterval(checkInterval);
+                                clearInterval(progressInterval);
+                                document.getElementById('progress-bar').style.width = '100%';
+                                showStatus(`✓ 記事生成が完了しました！`, 'success');
+                                setTimeout(updateStats, 2000);
+                            }
+                        })
+                        .catch(error => {
+                            // ポーリングエラーは無視
+                        });
+                }, 500);
+            })
+            .catch(error => {
+                showStatus('✗ エラー: ' + error.response?.data?.error || error.message, 'danger');
+            });
+    }
+
+    // 商品別レビュー記事を生成（特定商品）
+    function generateProductReview(asin, title) {
+        showStatus(`<div class="progress" style="height: 25px;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                 id="progress-bar" role="progressbar" style="width: 10%"></div>
+        </div>
+        <p class="mt-2 mb-0">📄 「${title.substring(0, 30)}...」の単品レビューを生成中...（1-2分）</p>`, 'info');
+
+        const beforeCount = parseInt(document.getElementById('stat-articles').textContent);
+
+        axios.post('/api/generate-single-review', { asin: asin })
+            .then(response => {
+                // 進捗を表示しながら完成を待つ
+                let progress = 10;
+                const progressInterval = setInterval(() => {
+                    progress += Math.random() * 15;
+                    if (progress > 90) progress = 90;
+                    document.getElementById('progress-bar').style.width = progress + '%';
+                }, 800);
+
+                // 記事が追加されるまで確認
+                let checkCount = 0;
+                const checkInterval = setInterval(() => {
+                    axios.get('/api/stats')
+                        .then(res => {
+                            if (res.data.articles > beforeCount) {
+                                clearInterval(checkInterval);
+                                clearInterval(progressInterval);
+                                document.getElementById('progress-bar').style.width = '100%';
+                                showStatus(`✓ 単品レビュー記事を生成しました！`, 'success');
+                                updateStats();
+                            }
+                            checkCount++;
+                            // 5分（300秒）タイムアウト
+                            if (checkCount > 300) {
+                                clearInterval(checkInterval);
+                                clearInterval(progressInterval);
+                                document.getElementById('progress-bar').style.width = '100%';
+                                showStatus(`✓ 記事生成が完了しました！`, 'success');
+                                setTimeout(updateStats, 2000);
+                            }
+                        })
+                        .catch(error => {
+                            // ポーリングエラーは無視
+                        });
+                }, 500);
+            })
+            .catch(error => {
+                showStatus('✗ エラー: ' + error.response?.data?.error || error.message, 'danger');
+            });
+    }
+
+    // 記事を投稿
+    function publishArticle(articleId) {
+        if (!confirm('この記事を下書きとしてnote.comに投稿しますか？')) return;
+
+        showStatus('📤 投稿を開始しました...', 'info');
+
+        axios.post(`/api/publish/${articleId}`, { draft: true })
+            .then(response => {
+                showStatus('✓ 投稿を開始しました（完了までお待ちください）', 'success');
+                setTimeout(updateStats, 2000);
+            })
+            .catch(error => {
+                showStatus('✗ エラー: ' + error.response?.data?.error || error.message, 'danger');
+            });
+    }
+
+    // ステータスメッセージを表示
+    function showStatus(message, type) {
+        const html = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        document.getElementById('status-message').innerHTML = html;
+    }
+
+    // 商品リストを表示
+    function showProducts() {
+        const modal = `
+        <div class="modal fade" id="productsModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">🎁 発見済み商品</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body" id="productsBody">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">読み込み中...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modal);
+        const modalEl = new bootstrap.Modal(document.getElementById('productsModal'));
+        modalEl.show();
+
+        // 削除
+        document.getElementById('productsModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+
+        // products_masterとproductsデータとcategoriesを並行取得
+        Promise.all([
+            axios.get('/api/products?per_page=100'),
+            axios.get('/api/products-master'),
+            axios.get('/api/categories')
+        ])
+            .then(([productsResponse, masterResponse, categoriesResponse]) => {
+                const products = productsResponse.data.products;
+                const masterData = masterResponse.data;
+                const categoriesData = categoriesResponse.data;
+
+                if (products.length === 0) {
+                    document.getElementById('productsBody').innerHTML = '<p class="text-muted">商品がまだありません。「🔍 商品を発見」をクリックしてください。</p>';
+                    return;
+                }
+
+                // カテゴリでグループ化
+                const grouped = {};
+                products.forEach(product => {
+                    if (!grouped[product.category]) {
+                        grouped[product.category] = [];
+                    }
+                    grouped[product.category].push(product);
+                });
+
+                let html = `
+                <div class="alert alert-info mb-3">
+                    <strong>🎁 ${productsResponse.data.total}個の商品を発見</strong>
+                </div>
+                `;
+
+                // カテゴリごとに表示（3層構造：コスパ・定番・高性能）
+                Object.keys(grouped).sort().forEach((category, index) => {
+                    const categoryProducts = grouped[category];
+                    let products = null;
+
+                    // masterDataを優先的に使用
+                    if (masterData[category]) {
+                        products = masterData[category];
+                    } else if (categoryProducts.length >= 3) {
+                        // masterDataがない場合、データベースから3つを選ぶ
+                        products = {
+                            cost: {
+                                name: categoryProducts[0].title,
+                                asin: categoryProducts[0].asin,
+                                price: categoryProducts[0].price ? `¥${categoryProducts[0].price.toLocaleString('ja-JP')}` : '価格情報なし',
+                                reason: '取得した商品'
+                            },
+                            std: {
+                                name: categoryProducts[Math.floor(categoryProducts.length / 2)].title,
+                                asin: categoryProducts[Math.floor(categoryProducts.length / 2)].asin,
+                                price: categoryProducts[Math.floor(categoryProducts.length / 2)].price ? `¥${categoryProducts[Math.floor(categoryProducts.length / 2)].price.toLocaleString('ja-JP')}` : '価格情報なし',
+                                reason: '取得した商品'
+                            },
+                            prem: {
+                                name: categoryProducts[categoryProducts.length - 1].title,
+                                asin: categoryProducts[categoryProducts.length - 1].asin,
+                                price: categoryProducts[categoryProducts.length - 1].price ? `¥${categoryProducts[categoryProducts.length - 1].price.toLocaleString('ja-JP')}` : '価格情報なし',
+                                reason: '取得した商品'
+                            }
+                        };
+                    }
+
+                    if (products) {
+                        // カテゴリのアイテム情報を取得
+                        const itemsList = categoriesData[category]?.items || [];
+                        const itemsStr = itemsList.length > 0 ? `（${itemsList.slice(0, 3).join('、')}...）` : '';
+
+                        html += `
+                        <div class="card mb-4">
+                            <div class="card-header bg-dark text-white">
+                                <strong>📁 ${category}</strong>
+                                <small class="text-light ms-2">${itemsStr}</small>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <div class="card h-100 border-success">
+                                            <div class="card-header bg-success text-white">
+                                                <small>💰 コスパ</small>
+                                            </div>
+                                            <div class="card-body">
+                                                <h6>${products.cost.name}</h6>
+                                                <p class="small text-muted">${products.cost.price || '価格目安なし'}</p>
+                                                <p class="small">${products.cost.reason || ''}</p>
+                                                <div style="display: flex; gap: 5px;">
+                                                    <button class="btn btn-sm btn-success flex-grow-1" onclick="const m=bootstrap.Modal.getInstance(document.getElementById('productsModal'));if(m)m.hide();generateProductReview('${products.cost.asin}', '${products.cost.name.replace(/'/g, "\\'")}')">
+                                                        📄 単品
+                                                    </button>
+                                                    <button class="btn btn-sm btn-warning" onclick="const m=bootstrap.Modal.getInstance(document.getElementById('productsModal'));if(m)m.hide();generateComparisonArticle('${category}', ${JSON.stringify({cost: products.cost, std: products.std, prem: products.prem})})">
+                                                        ⚖️
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card h-100 border-primary">
+                                            <div class="card-header bg-primary text-white">
+                                                <small>⭐ 定番</small>
+                                            </div>
+                                            <div class="card-body">
+                                                <h6>${products.std.name}</h6>
+                                                <p class="small text-muted">${products.std.price || '価格目安なし'}</p>
+                                                <p class="small">${products.std.reason || ''}</p>
+                                                <div style="display: flex; gap: 5px;">
+                                                    <button class="btn btn-sm btn-primary flex-grow-1" onclick="const m=bootstrap.Modal.getInstance(document.getElementById('productsModal'));if(m)m.hide();generateProductReview('${products.std.asin}', '${products.std.name.replace(/'/g, "\\'")}')">
+                                                        📄 単品
+                                                    </button>
+                                                    <button class="btn btn-sm btn-warning" onclick="const m=bootstrap.Modal.getInstance(document.getElementById('productsModal'));if(m)m.hide();generateComparisonArticle('${category}', ${JSON.stringify({cost: products.cost, std: products.std, prem: products.prem})})">
+                                                        ⚖️
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card h-100 border-warning">
+                                            <div class="card-header bg-warning text-dark">
+                                                <small>🚀 高性能</small>
+                                            </div>
+                                            <div class="card-body">
+                                                <h6>${products.prem.name}</h6>
+                                                <p class="small text-muted">${products.prem.price || '価格目安なし'}</p>
+                                                <p class="small">${products.prem.reason || ''}</p>
+                                                <div style="display: flex; gap: 5px;">
+                                                    <button class="btn btn-sm btn-warning flex-grow-1" onclick="const m=bootstrap.Modal.getInstance(document.getElementById('productsModal'));if(m)m.hide();generateProductReview('${products.prem.asin}', '${products.prem.name.replace(/'/g, "\\'")}')">
+                                                        📄 単品
+                                                    </button>
+                                                    <button class="btn btn-sm btn-warning" onclick="const m=bootstrap.Modal.getInstance(document.getElementById('productsModal'));if(m)m.hide();generateComparisonArticle('${category}', ${JSON.stringify({cost: products.cost, std: products.std, prem: products.prem})})">
+                                                        ⚖️
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                    }
+                });
+
+                document.getElementById('productsBody').innerHTML = html;
+            })
+            .catch(error => {
+                document.getElementById('productsBody').innerHTML = '<p class="text-danger">読み込みエラー: ' + error.message + '</p>';
+            });
+    }
+
+    // 記事リストを表示
+    function showArticles(status) {
+        const statusLabel = {
+            'all': '全記事',
+            'published': '公開済み記事',
+            'queued': 'キュー中の記事',
+            'draft': '下書き記事'
+        };
+
+        const modal = `
+        <div class="modal fade" id="articlesModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">📝 ${statusLabel[status] || '記事'}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body" id="articlesBody">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">読み込み中...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modal);
+        const modalEl = new bootstrap.Modal(document.getElementById('articlesModal'));
+        modalEl.show();
+
+        // 削除
+        document.getElementById('articlesModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+
+        // 記事データ取得
+        const url = status === 'all' ? '/api/articles' : `/api/articles?status=${status}`;
+        axios.get(url)
+            .then(response => {
+                const articles = response.data.articles;
+                if (articles.length === 0) {
+                    document.getElementById('articlesBody').innerHTML = '<p class="text-muted">記事がありません。</p>';
+                    return;
+                }
+
+                let html = `
+                <div class="list-group">
+                ${articles.map(article => `
+                    <a href="/articles/${article.id}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">${article.title.substring(0, 50)}${article.title.length > 50 ? '...' : ''}</h6>
+                            <small>
+                                <span class="badge bg-${article.status === 'published' ? 'success' : article.status === 'queued' ? 'warning' : 'secondary'}">
+                                    ${article.status}
+                                </span>
+                            </small>
+                        </div>
+                        <p class="mb-1 small text-muted">
+                            ${article.type} • ${article.word_count} 文字 • ${new Date(article.generated_at).toLocaleString('ja-JP')}
+                        </p>
+                    </a>
+                `).join('')}
+                </div>
+                `;
+                document.getElementById('articlesBody').innerHTML = html;
+            })
+            .catch(error => {
+                document.getElementById('articlesBody').innerHTML = '<p class="text-danger">読み込みエラー</p>';
+            });
+    }
+
+    // 商品マスターをグローバルで読み込む
+    let productsMaster = {};
+    axios.get('/api/products-master')
+        .then(response => {
+            productsMaster = response.data;
+        })
+        .catch(error => {
+            console.error('Failed to load products master:', error);
+        });
+
+    // 商品を検索
+    function searchProducts() {
+        const query = document.getElementById('productSearch').value.trim();
+
+        if (!query) {
+            document.getElementById('searchResults').innerHTML = '';
+            return;
+        }
+
+        const queryLower = query.toLowerCase();
+
+        // products_master から検索
+        let results = [];
+        for (const [category, products] of Object.entries(productsMaster)) {
+            if (category.toLowerCase().includes(queryLower)) {
+                results.push({
+                    category: category,
+                    products: products,
+                    match: 'cached'
+                });
+            }
+        }
+
+        // 検索結果を表示
+        let html = '';
+
+        if (results.length === 0) {
+            // 見つからない場合、Claude に探させる
+            html = `<div class="alert alert-warning">
+                <p>「${query}」は登録済みカテゴリにありません。</p>
+                <p>Claude が Amazon から商品を探しています...</p>
+                <div class="spinner-border spinner-border-sm" role="status">
+                    <span class="visually-hidden">探索中...</span>
+                </div>
+            </div>`;
+            document.getElementById('searchResults').innerHTML = html;
+
+            // Claude に探させる
+            axios.post('/api/find-products', { category: query })
+                .then(response => {
+                    if (response.data.status === 'success') {
+                        const products = response.data.products;
+                        showFoundProducts(query, products);
+                    } else {
+                        document.getElementById('searchResults').innerHTML = `
+                            <div class="alert alert-danger">
+                                「${query}」の商品が見つかりませんでした。
+                                <br><small>別のキーワードで試してください。</small>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('searchResults').innerHTML = `
+                        <div class="alert alert-danger">
+                            エラーが発生しました: ${error.response?.data?.error || error.message}
+                        </div>
+                    `;
+                });
+        } else {
+            results.forEach(result => {
+                html += `
+                <div class="card mb-3">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <strong>${result.category}</strong>
+                        <button class="btn btn-sm btn-warning" onclick="generateComparisonArticle('${result.category}', ${JSON.stringify(result.products).replace(/'/g, "&apos;")})">
+                            ⚖️ 3つを比較
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="card h-100 border-success">
+                                    <div class="card-header bg-success text-white">
+                                        <small>💰 コスパ</small>
+                                    </div>
+                                    <div class="card-body">
+                                        <h6>${result.products.cost.name}</h6>
+                                        <button class="btn btn-sm btn-success w-100"
+                                                onclick="generateFromMaster('${result.category}', 'cost')">
+                                            記事生成
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card h-100 border-primary">
+                                    <div class="card-header bg-primary text-white">
+                                        <small>⭐ 定番</small>
+                                    </div>
+                                    <div class="card-body">
+                                        <h6>${result.products.std.name}</h6>
+                                        <button class="btn btn-sm btn-primary w-100"
+                                                onclick="generateFromMaster('${result.category}', 'std')">
+                                            記事生成
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card h-100 border-warning">
+                                    <div class="card-header bg-warning text-dark">
+                                        <small>🚀 高性能</small>
+                                    </div>
+                                    <div class="card-body">
+                                        <h6>${result.products.prem.name}</h6>
+                                        <button class="btn btn-sm btn-warning w-100"
+                                                onclick="generateFromMaster('${result.category}', 'prem')">
+                                            記事生成
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
+            });
+        }
+
+        document.getElementById('searchResults').innerHTML = html;
+    }
+
+    // Claude が見つけた商品を表示
+    function showFoundProducts(category, products) {
+        let html = `
+        <div class="card mb-3">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <strong>✨ Claude が見つけた商品「${category}」</strong>
+                <button class="btn btn-sm btn-warning" onclick="generateComparisonArticle('${category}', ${JSON.stringify(products).replace(/'/g, "&apos;")})">
+                    ⚖️ 3つを比較
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="card h-100 border-success">
+                            <div class="card-header bg-success text-white">
+                                <small>💰 コスパ</small>
+                            </div>
+                            <div class="card-body">
+                                <h6>${products.cost.name}</h6>
+                                <p class="small text-muted">${products.cost.price}</p>
+                                <p class="small">${products.cost.reason}</p>
+                                <button class="btn btn-sm btn-success w-100"
+                                        onclick="generateFromClaude('${category}', 'cost', '${products.cost.asin}')">
+                                    記事生成
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100 border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <small>⭐ 定番</small>
+                            </div>
+                            <div class="card-body">
+                                <h6>${products.std.name}</h6>
+                                <p class="small text-muted">${products.std.price}</p>
+                                <p class="small">${products.std.reason}</p>
+                                <button class="btn btn-sm btn-primary w-100"
+                                        onclick="generateFromClaude('${category}', 'std', '${products.std.asin}')">
+                                    記事生成
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100 border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <small>🚀 高性能</small>
+                            </div>
+                            <div class="card-body">
+                                <h6>${products.prem.name}</h6>
+                                <p class="small text-muted">${products.prem.price}</p>
+                                <p class="small">${products.prem.reason}</p>
+                                <button class="btn btn-sm btn-warning w-100"
+                                        onclick="generateFromClaude('${category}', 'prem', '${products.prem.asin}')">
+                                    記事生成
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+        document.getElementById('searchResults').innerHTML = html;
+    }
+
+    // 3つの商品を比較する記事を生成
+    function generateComparisonArticle(category, products) {
+        showStatus(`✍️ 「${category}」の3つの商品を比較する記事を生成中...（2-3分かかります）`, 'info');
+
+        setTimeout(() => {
+            showStatus(`<div class="progress" style="height: 25px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated"
+                     id="progress-bar" role="progressbar" style="width: 10%"></div>
+            </div>
+            <p class="mt-2 mb-0">✍️ ${category}の比較記事を生成中...（1-3分）</p>`, 'info');
+        }, 500);
+
+        const beforeCount = parseInt(document.getElementById('stat-articles').textContent);
+
+        // 3つの ASIN を集める
+        const asins = [products.cost.asin, products.std.asin, products.prem.asin];
+
+        axios.post('/api/generate-comparison', {
+            category: category,
+            asins: asins
+        })
+            .then(response => {
+                let progress = 10;
+                const progressInterval = setInterval(() => {
+                    progress += Math.random() * 12;
+                    if (progress > 90) progress = 90;
+                    document.getElementById('progress-bar').style.width = progress + '%';
+                }, 1000);
+
+                let checkCount = 0;
+                const checkInterval = setInterval(() => {
+                    axios.get('/api/stats')
+                        .then(res => {
+                            if (res.data.articles > beforeCount) {
+                                clearInterval(checkInterval);
+                                clearInterval(progressInterval);
+                                document.getElementById('progress-bar').style.width = '100%';
+                                showStatus(`✓ 「${category}」の比較記事を生成しました！`, 'success');
+                                updateStats();
+                                document.getElementById('productSearch').value = '';
+                                document.getElementById('searchResults').innerHTML = '';
+                            }
+                            checkCount++;
+                            if (checkCount > 360) { // 3分
+                                clearInterval(checkInterval);
+                                clearInterval(progressInterval);
+                                showStatus(`✓ 記事生成が完了しました！`, 'success');
+                                setTimeout(updateStats, 2000);
+                            }
+                        });
+                }, 500);
+            })
+            .catch(error => {
+                showStatus('✗ エラー: ' + error.response?.data?.error || error.message, 'danger');
+            });
+    }
+
+    // Claude が見つけた商品で記事を生成
+    function generateFromClaude(category, tier, asin) {
+        const tierLabel = tier === 'cost' ? 'コスパ' : tier === 'std' ? '定番' : '高性能';
+        showStatus(`✍️ 「${category}」の${tierLabel}商品で記事を生成中...`, 'info');
+
+        setTimeout(() => {
+            showStatus(`<div class="progress" style="height: 25px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated"
+                     id="progress-bar" role="progressbar" style="width: 10%"></div>
+            </div>
+            <p class="mt-2 mb-0">✍️ ${category}の${tierLabel}商品で記事を生成中...</p>`, 'info');
+        }, 500);
+
+        const beforeCount = parseInt(document.getElementById('stat-articles').textContent);
+
+        axios.post('/api/generate', { type: 'review', category: category, asin: asin })
+            .then(response => {
+                let progress = 10;
+                const progressInterval = setInterval(() => {
+                    progress += Math.random() * 15;
+                    if (progress > 90) progress = 90;
+                    document.getElementById('progress-bar').style.width = progress + '%';
+                }, 800);
+
+                let checkCount = 0;
+                const checkInterval = setInterval(() => {
+                    axios.get('/api/stats')
+                        .then(res => {
+                            if (res.data.articles > beforeCount) {
+                                clearInterval(checkInterval);
+                                clearInterval(progressInterval);
+                                document.getElementById('progress-bar').style.width = '100%';
+                                showStatus(`✓ 「${category}」の${tierLabel}商品で記事を生成しました！`, 'success');
+                                updateStats();
+                                document.getElementById('productSearch').value = '';
+                                document.getElementById('searchResults').innerHTML = '';
+                            }
+                            checkCount++;
+                            if (checkCount > 300) {
+                                clearInterval(checkInterval);
+                                clearInterval(progressInterval);
+                                showStatus(`✓ 記事生成が完了しました！`, 'success');
+                                setTimeout(updateStats, 2000);
+                            }
+                        });
+                }, 500);
+            })
+            .catch(error => {
+                showStatus('✗ エラー: ' + error.response?.data?.error || error.message, 'danger');
+            });
+    }
+
+    // products_master から直接記事を生成
+    function generateFromMaster(category, tier) {
+        const tierLabel = tier === 'cost' ? 'コスパ' : tier === 'std' ? '定番' : '高性能';
+        const productName = productsMaster[category][tier].name;
+
+        showStatus(`✍️ 「${category}」の${tierLabel}商品「${productName}」で記事を生成中...`, 'info');
+
+        // プログレスバーを表示
+        setTimeout(() => {
+            showStatus(`<div class="progress" style="height: 25px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated"
+                     id="progress-bar" role="progressbar" style="width: 10%"></div>
+            </div>
+            <p class="mt-2 mb-0">✍️ ${category}の${tierLabel}商品で記事を生成中...</p>`, 'info');
+        }, 500);
+
+        const beforeCount = parseInt(document.getElementById('stat-articles').textContent);
+
+        axios.post('/api/generate', { type: 'review', category: category })
+            .then(response => {
+                // 進捗を表示しながら完成を待つ
+                let progress = 10;
+                const progressInterval = setInterval(() => {
+                    progress += Math.random() * 15;
+                    if (progress > 90) progress = 90;
+                    document.getElementById('progress-bar').style.width = progress + '%';
+                }, 800);
+
+                // 記事が追加されるまで確認
+                let checkCount = 0;
+                const checkInterval = setInterval(() => {
+                    axios.get('/api/stats')
+                        .then(res => {
+                            if (res.data.articles > beforeCount) {
+                                clearInterval(checkInterval);
+                                clearInterval(progressInterval);
+                                document.getElementById('progress-bar').style.width = '100%';
+                                showStatus(`✓ 「${category}」の${tierLabel}商品で記事を生成しました！`, 'success');
+                                updateStats();
+                                document.getElementById('productSearch').value = ''; // 検索フィールドをクリア
+                                document.getElementById('searchResults').innerHTML = '';
+                            }
+                            checkCount++;
+                            if (checkCount > 300) {
+                                clearInterval(checkInterval);
+                                clearInterval(progressInterval);
+                                showStatus(`✓ 記事生成が完了しました！`, 'success');
+                                setTimeout(updateStats, 2000);
+                            }
+                        });
+                }, 500);
+            })
+            .catch(error => {
+                showStatus('✗ エラー: ' + error.response?.data?.error || error.message, 'danger');
+            });
+    }
+
+    // 初期ロード
+    updateStats();
+</script>
+{% endblock %}
