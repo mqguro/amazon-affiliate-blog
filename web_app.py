@@ -486,12 +486,23 @@ def api_generate():
         def generate_task():
             session = get_session()  # Get new session for thread
             try:
+                # 1. 未使用の商品を優先
                 products_orm = (
                     session.query(Product)
                     .filter(Product.last_used_at == None)
                     .limit(5)
                     .all()
                 )
+
+                # 2. 未使用がなければ最も古い使用日の商品を使う
+                if not products_orm:
+                    logger.info("未使用商品がないため、最も古い使用日の商品を使用します")
+                    products_orm = (
+                        session.query(Product)
+                        .order_by(Product.last_used_at.asc())
+                        .limit(5)
+                        .all()
+                    )
 
                 if not products_orm:
                     logger.warning("No products available for generation")

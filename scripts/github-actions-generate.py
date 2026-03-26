@@ -44,8 +44,10 @@ def main():
         # セッションを取得
         session = get_session()
 
-        # 商品を発見（既存の未使用商品を取得）
+        # 商品を取得（優先順位：未使用 > 最も古い使用日 > すべて）
         logger.info("🔍 記事生成対象の商品を確認中...")
+
+        # 1. 未使用の商品を探す
         products = (
             session.query(Product)
             .filter(Product.last_used_at == None)
@@ -53,9 +55,19 @@ def main():
             .all()
         )
 
+        # 2. 未使用がなければ、最も古い使用日の商品を使う
         if not products:
-            logger.warning("⚠️ 利用可能な商品がありません。新しい商品を発見します...")
-            # 新しい商品を発見
+            logger.info("📦 未使用商品がないため、最も古い使用日の商品を使用します")
+            products = (
+                session.query(Product)
+                .order_by(Product.last_used_at.asc())
+                .limit(3)
+                .all()
+            )
+
+        # 3. 発見済み商品がない場合のみ、新しく発見
+        if not products:
+            logger.warning("⚠️ 登録済み商品がありません。新しい商品を発見します...")
             discover_products(settings, session)
             products = (
                 session.query(Product)
@@ -65,7 +77,7 @@ def main():
             )
 
         if not products:
-            logger.error("❌ 商品の発見に失敗しました")
+            logger.error("❌ 商品の取得に失敗しました")
             return False
 
         logger.info(f"✓ {len(products)}個の商品を取得しました")
