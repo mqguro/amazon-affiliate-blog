@@ -114,6 +114,88 @@ def dashboard():
         session.close()
 
 
+@app.route('/api/products', methods=['POST'])
+def api_add_product():
+    """商品を手動追加"""
+    session = get_session()
+    try:
+        data = request.json
+
+        # 必須フィールド確認
+        if not data.get('asin') or not data.get('title'):
+            return jsonify({"error": "ASIN と title は必須"}), 400
+
+        # 既存商品をチェック
+        existing = session.query(Product).filter_by(asin=data['asin']).first()
+        if existing:
+            return jsonify({"error": f"商品は既に登録されています: {existing.title}"}), 400
+
+        # 新規商品を作成
+        product = Product(
+            asin=data['asin'],
+            title=data['title'],
+            url=data.get('url', data['asin']),
+            category=data.get('category', 'その他'),
+            price=data.get('price'),
+            rating=data.get('rating'),
+            review_count=data.get('review_count'),
+            image_url=data.get('image_url'),
+        )
+
+        session.add(product)
+        session.commit()
+
+        logger.info(f"✓ 商品を追加しました: {product.title} ({product.asin})")
+
+        return jsonify({
+            "status": "success",
+            "message": f"商品を追加しました: {product.title}",
+            "product": {
+                "asin": product.asin,
+                "title": product.title,
+                "category": product.category,
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"Product add error: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        session.close()
+
+
+@app.route('/api/products', methods=['GET'])
+def api_products_list():
+    """登録済みの商品一覧"""
+    session = get_session()
+    try:
+        products = session.query(Product).order_by(Product.discovered_at.desc()).all()
+
+        products_data = [
+            {
+                "asin": p.asin,
+                "title": p.title,
+                "category": p.category,
+                "price": p.price,
+                "rating": p.rating,
+                "discovered_at": p.discovered_at.isoformat() if p.discovered_at else None,
+                "last_used_at": p.last_used_at.isoformat() if p.last_used_at else None,
+            }
+            for p in products
+        ]
+
+        return jsonify({
+            "products": products_data,
+            "total": len(products),
+        })
+
+    except Exception as e:
+        logger.error(f"Products list error: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        session.close()
+
+
 @app.route('/api/articles')
 def api_articles():
     """Get all articles as JSON"""

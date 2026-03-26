@@ -52,6 +52,40 @@
     </div>
 </div>
 
+<!-- Product Registration -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">➕ 商品を手動追加</h5>
+            </div>
+            <div class="card-body">
+                <div class="row gap-2">
+                    <div class="col-md-2">
+                        <input type="text" class="form-control" id="asinInput" placeholder="ASIN">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" id="titleInput" placeholder="商品名">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" class="form-control" id="categoryInput" placeholder="カテゴリ">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" class="form-control" id="priceInput" placeholder="価格（¥）">
+                    </div>
+                    <div class="col-md-1">
+                        <input type="number" class="form-control" id="ratingInput" placeholder="評価（5.0）" step="0.1" min="0" max="5">
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-success w-100" onclick="addProduct()">✅ 追加</button>
+                    </div>
+                </div>
+                <div id="productAddMessage" class="mt-2"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Product Search -->
 <div class="row mb-4">
     <div class="col-md-12">
@@ -318,6 +352,47 @@
     // 初回チェック＋ 2秒ごとにポーリング
     checkGenerationStatus();
     setInterval(checkGenerationStatus, 2000);
+
+    // 商品を手動追加
+    async function addProduct() {
+        const asin = document.getElementById('asinInput').value.trim();
+        const title = document.getElementById('titleInput').value.trim();
+        const category = document.getElementById('categoryInput').value.trim();
+        const price = document.getElementById('priceInput').value;
+        const rating = document.getElementById('ratingInput').value;
+        const messageDiv = document.getElementById('productAddMessage');
+
+        if (!asin || !title) {
+            messageDiv.innerHTML = '<div class="alert alert-warning">ASIN と商品名は必須です</div>';
+            return;
+        }
+
+        try {
+            const response = await axios.post('/api/products', {
+                asin,
+                title,
+                category: category || 'その他',
+                price: price ? parseFloat(price) : null,
+                rating: rating ? parseFloat(rating) : null,
+                url: asin
+            });
+
+            messageDiv.innerHTML = `<div class="alert alert-success">✓ ${response.data.message}</div>`;
+
+            // フォームをクリア
+            document.getElementById('asinInput').value = '';
+            document.getElementById('titleInput').value = '';
+            document.getElementById('categoryInput').value = '';
+            document.getElementById('priceInput').value = '';
+            document.getElementById('ratingInput').value = '';
+
+            // 統計を更新
+            updateStats();
+        } catch (error) {
+            const errorMsg = error.response?.data?.error || error.message;
+            messageDiv.innerHTML = `<div class="alert alert-danger">❌ ${errorMsg}</div>`;
+        }
+    }
 
     // 商品を発見
     function discoverProducts() {
