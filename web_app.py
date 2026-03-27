@@ -8,7 +8,7 @@ from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_cors import CORS
 from config.settings import Settings
 from storage.database import init_database, get_session
-from storage.models import Product, Article, RunLog, ProductData, ArticleData
+from storage.models import Product, Article, ArticleProduct, RunLog, ProductData, ArticleData
 from discovery.paapi import PAAPIClient
 from discovery.categories import get_all_categories
 import discovery.categories as cat_module
@@ -414,6 +414,14 @@ def api_generate_single_review():
                         status="draft",
                     )
                     session.add(db_article)
+                    session.flush()
+
+                    # Record which product was used
+                    article_product = ArticleProduct(
+                        article_id=db_article.id,
+                        product_asin=product_orm.asin,
+                    )
+                    session.add(article_product)
 
                     # Update product usage
                     product_orm.last_used_at = datetime.utcnow()
@@ -559,9 +567,15 @@ def api_generate():
                         status="draft",
                     )
                     session.add(db_article)
+                    session.flush()  # Get the article ID
 
-                    # Update product usage (use products_orm, not ProductData)
+                    # Record which products were used in this article
                     for product in products_orm[:len(product_data_list)]:
+                        article_product = ArticleProduct(
+                            article_id=db_article.id,
+                            product_asin=product.asin,
+                        )
+                        session.add(article_product)
                         product.last_used_at = datetime.utcnow()
 
                     session.commit()

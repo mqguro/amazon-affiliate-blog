@@ -68,6 +68,23 @@ class Article(Base):
         }
 
 
+class ArticleProduct(Base):
+    """Relationship between articles and products used in them"""
+    __tablename__ = "article_products"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    article_id = Column(Integer, nullable=False)  # Foreign key to articles.id
+    product_asin = Column(String(10), nullable=False)  # Foreign key to products.asin
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            "article_id": self.article_id,
+            "product_asin": self.product_asin,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
 class RunLog(Base):
     """Execution logs for scheduled jobs"""
     __tablename__ = "run_logs"
